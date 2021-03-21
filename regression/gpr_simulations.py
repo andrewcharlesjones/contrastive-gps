@@ -27,7 +27,6 @@ noise_variance = np.float64(0.1)
 ## GPs
 gp1 = tfd.GaussianProcess(
       mean_fn=lambda x: np.float64(0.),
-      # mean_fn=lambda x: np.float64(10) * x,
       kernel=kernel1,
       index_points=observation_index_points,
       observation_noise_variance=noise_variance)
@@ -43,20 +42,6 @@ gp12 = tfd.GaussianProcess(
       kernel=kernel12,
       index_points=observation_index_points,
       observation_noise_variance=noise_variance)
-
-## Sample
-# gp1_samples = gp1.sample().numpy()
-# gp2_samples = gp2.sample().numpy()
-# gp12_samples = gp2.sample().numpy()
-
-# ## Plot
-# plt.figure(figsize=(14, 7))
-# plt.scatter(observation_index_points, gp1_samples, label="GP1")
-# plt.scatter(observation_index_points, gp2_samples, label="GP2")
-# plt.scatter(observation_index_points, gp12_samples, label="GP12")
-# plt.legend()
-# plt.show()
-# import ipdb; ipdb.set_trace()
 
 
 ## GPR
@@ -109,13 +94,10 @@ gpr12_samples = gprm12.sample()
 
 ## Plot
 plt.figure(figsize=(14, 8))
-# plt.subplot(311)
 plt.title(r"$K_1=$Exponentiated quadratic")
 plt.scatter(predictive_index_points, gpr1_samples, label="GP1")
-# plt.subplot(312)
 plt.title(r"$K_2=$Periodic")
 plt.scatter(predictive_index_points, gpr2_samples, label="GP2")
-# plt.subplot(313)
 plt.title(r"$K_1 + K_2$")
 plt.scatter(predictive_index_points, gpr12_samples, label="GP12")
 plt.legend()
