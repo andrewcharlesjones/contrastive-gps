@@ -1,1 +1,1 @@
-# contrastive-gps
+# Contrastive Gaussian processes
