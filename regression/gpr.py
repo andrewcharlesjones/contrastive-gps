@@ -64,3 +64,48 @@ class ContrastiveGaussianProcessRegression:
         preds[test_fg_idx] = np.array(gprm_fg.mean())
 
         return preds
+
+if __name__ == "__main__":
+    n = 100
+    p = 1
+    X = np.random.normal(size=(n, p))
+    groups = np.random.binomial(n=1, p=0.5, size=n)
+    beta_shared = np.random.normal(size=p)
+    beta_fg = np.random.normal(size=p)
+    y = X @ beta_shared + (X @ beta_fg) * groups
+
+    # Initialize model
+    # kernel_shared = tfk.Linear()
+    # kernel_fg = tfk.Linear()
+    kernel_shared = tfk.ExponentiatedQuadratic()
+    kernel_fg = tfk.ExponentiatedQuadratic()
+    gpr = ContrastiveGaussianProcessRegression(
+        kernel_shared=kernel_shared, kernel_fg=kernel_fg
+    )
+
+    # Fit
+    gpr.fit(X, y, groups)
+
+    # Predict
+    n_test = 200
+    X_test = np.expand_dims(np.linspace(-5, 5, n_test), 1)
+    groups_test = np.random.binomial(n=1, p=0.5, size=n_test)
+    preds = gpr.predict(X_test, groups_test)
+
+    plt.figure(figsize=(14, 6))
+    plt.subplot(121)
+    plt.title("Data")
+    plt.scatter(X[groups == 0], y[groups == 0], label="Background")
+    plt.scatter(X[groups == 1], y[groups == 1], label="Foreground")
+    plt.legend()
+
+    plt.subplot(122)
+    plt.title("Predictions")
+    plt.scatter(X_test[groups_test == 0], preds[groups_test == 0], label="Background")
+    plt.scatter(X_test[groups_test == 1], preds[groups_test == 1], label="Foreground")
+    plt.legend()
+    plt.show()
+    import ipdb; ipdb.set_trace()
+
+
+
