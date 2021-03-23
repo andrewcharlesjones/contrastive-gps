@@ -17,4 +17,6 @@ XXT_contrastive[-n_foreground:, :n_background] *= 2.0
 
 print(np.all(np.linalg.eigvals(XXT_contrastive) > -1e-10))
 print(np.min(np.linalg.eigvals(XXT_contrastive)))
-import ipdb; ipdb.set_trace()
+import ipdb
+
+ipdb.set_trace()

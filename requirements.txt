@@ -1,0 +1,6 @@
+tensorflow_probability==0.11.0
+numpy==1.18.5
+ipdb==0.13.3
+matplotlib==3.3.0
+gpflow==2.1.4
+tensorflow==1.15.0
