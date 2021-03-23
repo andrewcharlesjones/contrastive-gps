@@ -65,6 +65,7 @@ class ContrastiveGaussianProcessRegression:
 
         return preds
 
+
 if __name__ == "__main__":
     n = 100
     p = 1
@@ -105,7 +106,6 @@ if __name__ == "__main__":
     plt.scatter(X_test[groups_test == 1], preds[groups_test == 1], label="Foreground")
     plt.legend()
     plt.show()
-    import ipdb; ipdb.set_trace()
+    import ipdb
 
-
-
+    ipdb.set_trace()
