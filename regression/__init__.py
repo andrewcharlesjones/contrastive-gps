@@ -1,1 +1,2 @@
 from regression.gpr import ContrastiveGaussianProcessRegression
+from regression.gpr_gpytorch import ContrastiveGaussianProcessRegression

@@ -133,29 +133,57 @@ class ContrastiveGaussianProcessRegression:
         self.likelihood.eval()
 
         preds = np.zeros(X.shape[0])
-        bg_idx, fg_idx = np.where(groups == 0)[0], np.where(groups == 1)[0]
-        Xtest_bg, Xtest_fg = torch.from_numpy(X[bg_idx]), torch.from_numpy(X[fg_idx])
+        lower = np.zeros(X.shape[0])
+        upper = np.zeros(X.shape[0])
+        bg_idx, fg_idx, fg_only_idx = np.where(groups == 0)[0], np.where(groups == 1)[0], np.where(groups == 2)[0]
+        Xtest_bg, Xtest_fg, Xtest_fg_only = torch.from_numpy(X[bg_idx]), torch.from_numpy(X[fg_idx]), torch.from_numpy(X[fg_only_idx])
 
         with torch.no_grad():
             preds_bg = self.likelihood(self.model_bg(Xtest_bg.double()))
             preds_fg = self.likelihood(self.model_fg(Xtest_fg.double()))
+            preds_fg_only = self.likelihood(self.model_fg_only(Xtest_fg_only.double()))
 
+        # Means
         preds[bg_idx] = preds_bg.mean.numpy()
         preds[fg_idx] = preds_fg.mean.numpy()
-        return preds
+        preds[fg_only_idx] = preds_fg_only.mean.numpy()
+
+        # Confidence regions
+        conf_region_bg = preds_bg.confidence_region()
+        lower_bg, upper_bg = conf_region_bg[0].numpy(), conf_region_bg[1].numpy()
+        lower[bg_idx] = lower_bg
+        upper[bg_idx] = upper_bg
+        conf_region_fg = preds_fg.confidence_region()
+        lower_fg, upper_fg = conf_region_fg[0].numpy(), conf_region_fg[1].numpy()
+        lower[fg_idx] = lower_fg
+        upper[fg_idx] = upper_fg
+        conf_region_fg_only = preds_fg_only.confidence_region()
+        lower_fg_only, upper_fg_only = conf_region_fg_only[0].numpy(), conf_region_fg_only[1].numpy()
+        lower[fg_only_idx] = lower_fg_only
+        upper[fg_only_idx] = upper_fg_only
+        return preds, lower, upper
 
 
 if __name__ == "__main__":
+
+    import matplotlib
+    font = {"size": 25}
+    matplotlib.rc("font", **font)
+    matplotlib.rcParams["text.usetex"] = True
+
     n = 100
     p = 1
     X = np.random.uniform(-5, 5, size=(n, p))
     groups = np.random.binomial(n=1, p=0.5, size=n)
-    # beta_shared = np.random.normal(size=p)
-    # beta_fg = np.random.normal(size=p)
-    # y = X @ beta_shared + (X @ beta_fg) * groups
+
+
+    def bg_fn(x):
+        return np.sin(x)
+    def fg_fn(x):
+        return np.sin(x * 3)
     y = (
-        np.sin(X).squeeze()
-        + np.sin(X * 3).squeeze() * groups
+        bg_fn(X).squeeze()
+        + fg_fn(X).squeeze() * groups
         + np.random.normal(scale=0.1, size=n)
     )
     model = ContrastiveGaussianProcessRegression(
@@ -165,8 +193,57 @@ if __name__ == "__main__":
 
     n_test = 201
     X_test = np.linspace(-6, 6, n_test)
-    groups_test = np.random.binomial(n=1, p=0.5, size=n_test)
-    preds = model.predict(X_test, groups_test)
-    import ipdb
+    preds_bg, lower_bg, upper_bg = model.predict(X_test, np.zeros(n_test))
+    preds_fg_only, lower_fg_only, upper_fg_only = model.predict(X_test, 2*np.ones(n_test))
+    preds_fg, lower_fg, upper_fg = model.predict(X_test, np.ones(n_test))
 
-    ipdb.set_trace()
+    X_bg, y_bg = X[groups == 0], y[groups == 0]
+    X_fg, y_fg = X[groups == 1], y[groups == 1]
+
+    plt.figure(figsize=(42, 14))
+
+    ## True functions
+    plt.subplot(321)
+    plt.plot(X_test, bg_fn(X_test), linewidth=3)
+    plt.ylim([-2, 2])
+    plt.title(r"$f(x) = \sin(x)$")
+    plt.subplot(323)
+    plt.plot(X_test, fg_fn(X_test), linewidth=3)
+    plt.ylim([-2, 2])
+    plt.title(r"$f(x) = \sin(3x)$")
+    plt.subplot(325)
+    plt.plot(X_test, bg_fn(X_test) + fg_fn(X_test), linewidth=3)
+    plt.ylim([-2, 2])
+    plt.title(r"$f(x) = \sin(x) + \sin(3x)$")
+
+    plt.subplot(322)
+    plt.plot(X_test, preds_bg)
+    plt.fill_between(X_test, lower_bg, upper_bg, alpha=0.5)
+    plt.scatter(X_bg, y_bg, label="BG")
+    plt.scatter(X_fg, y_fg, label="FG")
+    plt.legend()
+    plt.ylim([-2, 2])
+    plt.title(r"$k(x, x^\prime) = \sum\limits_{q=1}^{Q_s} k_q(x, x^\prime)$" + " (predictions with shared kernels only)")
+    plt.subplot(324)
+    plt.plot(X_test, preds_fg_only)
+    plt.fill_between(X_test, lower_fg_only, upper_fg_only, alpha=0.5)
+    plt.scatter(X_bg, y_bg, label="BG")
+    plt.scatter(X_fg, y_fg, label="FG")
+    plt.legend()
+    plt.ylim([-2, 2])
+    plt.title(r"$k(x, x^\prime) = \sum\limits_{q=1}^{Q_f} k_q(x, x^\prime)$" + " (predictions with FG kernels only)")
+    plt.subplot(326)
+    plt.plot(X_test, preds_fg)
+    plt.fill_between(X_test, lower_fg, upper_fg, alpha=0.5)
+    plt.scatter(X_bg, y_bg, label="BG")
+    plt.scatter(X_fg, y_fg, label="FG")
+    plt.ylim([-2, 2])
+    plt.title(r"$k(x, x^\prime) = \sum\limits_{q=1}^{Q_s} k_q(x, x^\prime) + \sum\limits_{q=1}^{Q_f} k_q(x, x^\prime)$" + " (predictions with FG+shared kernels)")
+    plt.legend()
+    plt.suptitle(r"$f(x_b) = \sin(x_b)$" + "\n" + r"$f(x_f) = \sin(x_f) + \sin(3x_f)$")
+    plt.tight_layout()
+    plt.savefig("../plots/sinusoidal_contrastive_gp.png")
+    plt.close()
+    # plt.show()
+    # import ipdb
+    # ipdb.set_trace()
