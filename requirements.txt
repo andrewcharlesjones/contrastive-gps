@@ -10,3 +10,5 @@ matplotlib==3.3.0
 gpytorch==1.4.0
 scikit_learn==0.24.1
 torch==1.8.1
+black == 20.8b1
+
