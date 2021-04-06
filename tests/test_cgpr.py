@@ -1,4 +1,5 @@
-# import sys
+import sys
+sys.path.append("..")
 from regression.gpr_gpytorch import ContrastiveGaussianProcessRegression
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -32,34 +33,34 @@ def test_gpr_gpytorch():
 
     assert np.allclose(preds, y, atol=1e-1)
 
-def test_gpr():
-    # Generate data
-    n = 100
-    p = 1
-    X = np.random.normal(size=(n, p))
-    groups = np.random.binomial(n=1, p=0.5, size=n)
-    beta_shared = np.random.normal(size=p)
-    beta_fg = np.random.normal(size=p)
-    y = X @ beta_shared + (X @ beta_fg) * groups
+# def test_gpr():
+#     # Generate data
+#     n = 100
+#     p = 1
+#     X = np.random.normal(size=(n, p))
+#     groups = np.random.binomial(n=1, p=0.5, size=n)
+#     beta_shared = np.random.normal(size=p)
+#     beta_fg = np.random.normal(size=p)
+#     y = X @ beta_shared + (X @ beta_fg) * groups
 
-    # Initialize model
-    kernel_shared = tfk.Linear()
-    kernel_fg = tfk.Linear()
-    gpr = ContrastiveGaussianProcessRegression(
-        kernel_shared=kernel_shared, kernel_fg=kernel_fg
-    )
+#     # Initialize model
+#     kernel_shared = tfk.Linear()
+#     kernel_fg = tfk.Linear()
+#     gpr = ContrastiveGaussianProcessRegression(
+#         kernel_shared=kernel_shared, kernel_fg=kernel_fg
+#     )
 
-    # Fit
-    gpr.fit(X, y, groups)
+#     # Fit
+#     gpr.fit(X, y, groups)
 
-    # Predict
-    preds = gpr.predict(X, groups)
+#     # Predict
+#     preds = gpr.predict(X, groups)
 
-    assert np.allclose(preds, y, atol=1e-1)
+#     assert np.allclose(preds, y, atol=1e-1)
 
 
 
 
 if __name__ == "__main__":
     test_gpr_gpytorch()
-    test_gpr()
+    # test_gpr()
