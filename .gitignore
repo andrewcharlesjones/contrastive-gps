@@ -1,5 +1,6 @@
 *.csv
 *.png
 *.tsv
+*.mat
 __pycache__/
 .DS_Store
